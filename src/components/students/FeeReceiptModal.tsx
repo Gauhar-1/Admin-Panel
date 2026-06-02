@@ -1,7 +1,9 @@
 'use client';
 
 import Modal from '@/components/ui/Modal';
+import { generateBeautifulReceipt } from '@/lib/pdf';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { IStudent } from '@/types';
 
 interface FeeReceiptModalProps {
   isOpen: boolean;
@@ -12,6 +14,7 @@ interface FeeReceiptModalProps {
   branch: string;
   remaining: number;
   date: Date;
+  student: IStudent;
 }
 
 export default function FeeReceiptModal({
@@ -23,10 +26,9 @@ export default function FeeReceiptModal({
   branch,
   remaining,
   date,
+  student,
 }: FeeReceiptModalProps) {
-  const handlePrint = () => {
-    window.print();
-  };
+ 
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Fee Receipt" size="md">
@@ -96,7 +98,7 @@ export default function FeeReceiptModal({
           Close
         </button>
         <button
-          onClick={handlePrint}
+          onClick={() => generateBeautifulReceipt(student, amount, receiptId)}
           className="px-5 py-2.5 text-sm font-semibold bg-accent hover:bg-accent-hover text-white rounded-xl
             transition-all duration-200 shadow-sm shadow-accent/20 flex items-center gap-2"
         >

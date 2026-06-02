@@ -15,7 +15,7 @@ export default function SchoolPage() {
           School Management
         </h1>
         <p className="text-muted text-sm mt-1">
-          Manage students, teachers, fees, and attendance for the School branch
+          Manage students, teachers, and fees for the School branch
         </p>
       </div>
 
@@ -45,7 +45,7 @@ export default function SchoolPage() {
 
       {/* Content */}
       {activeTab === 'students' ? (
-        <StudentTable branch="School" showAttendance={true} />
+        <StudentTable branch="School" />
       ) : (
         <TeacherTable branch="School" />
       )}

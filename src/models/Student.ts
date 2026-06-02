@@ -9,6 +9,7 @@ export interface IStudentDoc extends Document {
   tillFeesPaid: number;
   remainingFees: number;
   installments: { amount: number; date: Date; receiptId: string }[];
+  installmentMonths: number;
   attendanceStatus: 'Present' | 'Absent' | 'Unmarked';
   lastAttendanceReset: Date;
 }
@@ -34,6 +35,7 @@ const StudentSchema = new Schema<IStudentDoc>(
     joiningDate: { type: Date, default: Date.now },
     totalFees: { type: Number, required: true, min: 0 },
     tillFeesPaid: { type: Number, required: true, default: 0, min: 0 },
+    installmentMonths: { type: Number, default: 1 },
     installments: [InstallmentSchema],
     attendanceStatus: {
       type: String,

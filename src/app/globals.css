@@ -67,6 +67,24 @@ body {
   background: #94a3b8;
 }
 
+/* Custom scrollbar class for activity feed and modals */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
 /* Skeleton animation */
 @keyframes shimmer {
   0% {
@@ -130,6 +148,22 @@ body {
   animation: fadeBackdrop 0.2s ease-out;
 }
 
+/* Scale up animation for fullscreen overlay */
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Print styles */
 @media print {
   body * {
@@ -150,6 +184,13 @@ body {
   }
 
   .no-print {
+    display: none !important;
+  }
+
+  /* Hide sidebar, toasts, modals backdrop during print */
+  aside,
+  [data-sonner-toaster],
+  .animate-backdrop {
     display: none !important;
   }
 }

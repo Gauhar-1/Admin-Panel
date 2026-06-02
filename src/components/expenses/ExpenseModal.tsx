@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import Modal from '@/components/ui/Modal';
 import { IExpense } from '@/types';
 
@@ -11,41 +13,45 @@ interface ExpenseModalProps {
   expense: IExpense;
 }
 
+const EXPENSE_CATEGORIES = ['Maintenance', 'Supplies', 'Utilities', 'Equipment', 'Transport', 'Stationery', 'Events', 'Other'];
+
 export default function ExpenseModal({ isOpen, onClose, onSaved, expense }: ExpenseModalProps) {
+  const queryClient = useQueryClient();
+
   const [form, setForm] = useState({
     itemName: '',
     amount: '',
     date: '',
     category: '',
+    customCategory: '',
   });
   const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (expense) {
+      const cat = expense.category || '';
+      const isCustom = cat && !EXPENSE_CATEGORIES.includes(cat) && cat !== 'General';
       setForm({
         itemName: expense.itemName,
         amount: String(expense.amount),
         date: new Date(expense.date).toISOString().split('T')[0],
-        category: expense.category || '',
+        category: isCustom ? 'Other' : cat,
+        customCategory: isCustom ? cat : '',
       });
     }
     setError('');
   }, [expense, isOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const amount = parseFloat(form.amount);
+      if (isNaN(amount) || amount <= 0) throw new Error('Amount must be a valid positive number');
 
-    const amount = parseFloat(form.amount);
-    if (isNaN(amount) || amount <= 0) {
-      setError('Amount must be a valid positive number');
-      return;
-    }
+      const finalCategory = form.category === 'Other'
+        ? form.customCategory || 'Other'
+        : form.category || undefined;
 
-    setSaving(true);
-    try {
-      // Delete old and create new (since expense API doesn't have PUT)
+      // Delete old and create new (expense API doesn't have PUT)
       await fetch(`/api/expenses?id=${expense._id}`, { method: 'DELETE' });
       const res = await fetch('/api/expenses', {
         method: 'POST',
@@ -54,25 +60,33 @@ export default function ExpenseModal({ isOpen, onClose, onSaved, expense }: Expe
           itemName: form.itemName,
           amount,
           date: form.date,
-          category: form.category || undefined,
+          category: finalCategory,
         }),
       });
 
       const json = await res.json();
-      if (!json.success) {
-        setError(json.error || 'Failed to update expense');
-        return;
-      }
+      if (!json.success) throw new Error(json.error || 'Failed to update expense');
+      return json;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      toast.success('Expense updated');
       onSaved();
-    } catch {
-      setError('Something went wrong. Please try again.');
-    } finally {
-      setSaving(false);
-    }
+    },
+    onError: (err: Error) => {
+      setError(err.message);
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    saveMutation.mutate();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Edit Expense`} size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title="Edit Expense" size="md">
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
@@ -115,14 +129,25 @@ export default function ExpenseModal({ isOpen, onClose, onSaved, expense }: Expe
               focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
           >
             <option value="">General</option>
-            <option value="Maintenance">Maintenance</option>
-            <option value="Supplies">Supplies</option>
-            <option value="Utilities">Utilities</option>
-            <option value="Equipment">Equipment</option>
-            <option value="Transport">Transport</option>
-            <option value="Other">Other</option>
+            {EXPENSE_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
           </select>
         </div>
+
+        {form.category === 'Other' && (
+          <div className="animate-fade-in">
+            <label className="block text-sm font-medium text-foreground mb-1.5">Custom Category</label>
+            <input
+              type="text"
+              value={form.customCategory}
+              onChange={(e) => setForm({ ...form, customCategory: e.target.value })}
+              className="w-full px-4 py-2.5 text-sm border border-border rounded-xl
+                focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+              placeholder="Specify category..."
+            />
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-1.5">Date</label>
@@ -145,11 +170,11 @@ export default function ExpenseModal({ isOpen, onClose, onSaved, expense }: Expe
           </button>
           <button
             type="submit"
-            disabled={saving}
+            disabled={saveMutation.isPending}
             className="px-5 py-2.5 text-sm font-semibold bg-accent hover:bg-accent-hover text-white rounded-xl
               transition-all duration-200 shadow-sm shadow-accent/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </form>

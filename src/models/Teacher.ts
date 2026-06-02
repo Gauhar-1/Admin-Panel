@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface ITeacherDoc extends Document {
   name: string;
   phone: string;
-  branch: 'School' | 'College';
+  branch: 'School' | 'College' | 'Pharma';
   joiningDate: Date;
   totalSalary: number;
   tillGivenFees: number;
@@ -20,7 +20,7 @@ const TeacherSchema = new Schema<ITeacherDoc>(
     branch: {
       type: String,
       required: true,
-      enum: ['School', 'College'],
+      enum: ['School', 'College', 'Pharma'],
     },
     joiningDate: { type: Date, default: Date.now },
     totalSalary: { type: Number, required: true, min: 0 },

@@ -20,14 +20,6 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    // Reset attendance if needed
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    await Teacher.updateMany(
-      { lastAttendanceReset: { $lt: today } },
-      { $set: { attendanceStatus: 'Unmarked', lastAttendanceReset: today } }
-    );
-
     const teachers = await Teacher.find(filter).sort({ createdAt: -1 });
     return NextResponse.json({ success: true, data: teachers });
   } catch (error) {
@@ -65,7 +57,7 @@ export async function PUT(req: NextRequest) {
   try {
     await dbConnect();
     const body = await req.json();
-    const { _id, salaryPayment, ...updateData } = body;
+    const { _id, salaryPayment, paymentReason, ...updateData } = body;
 
     if (!_id) {
       return NextResponse.json(

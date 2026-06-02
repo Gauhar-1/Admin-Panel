@@ -20,14 +20,6 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    // Reset attendance if needed
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    await Student.updateMany(
-      { lastAttendanceReset: { $lt: today } },
-      { $set: { attendanceStatus: 'Unmarked', lastAttendanceReset: today } }
-    );
-
     const students = await Student.find(filter).sort({ createdAt: -1 });
     return NextResponse.json({ success: true, data: students });
   } catch (error) {
@@ -65,7 +57,7 @@ export async function PUT(req: NextRequest) {
   try {
     await dbConnect();
     const body = await req.json();
-    const { _id, paymentAmount, ...updateData } = body;
+    const { _id, paymentAmount, paymentReason, ...updateData } = body;
 
     if (!_id) {
       return NextResponse.json(
@@ -91,6 +83,7 @@ export async function PUT(req: NextRequest) {
         amount: roundTwo(paymentAmount),
         date: new Date(),
         receiptId,
+        ...(paymentReason ? { reason: paymentReason } : {}),
       });
     }
 

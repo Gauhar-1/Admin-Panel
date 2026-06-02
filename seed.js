@@ -32,11 +32,12 @@ const TeacherSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     phone: { type: String, required: true },
-    branch: { type: String, enum: ['School', 'College'], required: true },
+    branch: { type: String, enum: ['School', 'College', 'Pharma'], required: true },
     joiningDate: { type: Date, default: Date.now },
     totalSalary: { type: Number, required: true },
     tillGivenFees: { type: Number, default: 0 },
     overpayments: { type: Number, default: 0 },
+    payments: [{ amount: Number, date: { type: Date, default: Date.now }, reason: String, receiptId: String }],
     attendanceStatus: { type: String, enum: ['Present', 'Absent', 'Unmarked'], default: 'Unmarked' },
     lastAttendanceReset: { type: Date, default: Date.now },
   },
@@ -125,6 +126,12 @@ const collegeTeachers = [
   { name: 'Dr. Manish Dubey', totalSalary: 52000 },
   { name: 'Prof. Lakshmi Narayan', totalSalary: 60000 },
   { name: 'Dr. Kiran Desai', totalSalary: 45000 },
+];
+
+const pharmaTeachers = [
+  { name: 'Dr. Ramesh Chandra', totalSalary: 65000 },
+  { name: 'Prof. Anjali Gupta', totalSalary: 58000 },
+  { name: 'Dr. Vivek Sharma', totalSalary: 62000 },
 ];
 
 const expenseItems = [
@@ -221,6 +228,29 @@ async function seed() {
       const overpayments = tillGivenFees > totalSalary
         ? Math.round((tillGivenFees - totalSalary) * 100) / 100
         : 0;
+
+      // Generate payments array
+      const payments = [];
+      if (tillGivenFees > 0) {
+        // 1 to 4 payments
+        const numPayments = Math.floor(Math.random() * 4) + 1;
+        let remainingToDistribute = tillGivenFees;
+        
+        for (let i = 0; i < numPayments; i++) {
+          const isLast = i === numPayments - 1;
+          const amt = isLast ? remainingToDistribute : Math.round((remainingToDistribute / (numPayments - i)) / 100) * 100;
+          if (amt <= 0) break;
+          
+          payments.push({
+            amount: amt,
+            date: new Date(joiningDate.getTime() + (i + 1) * 30 * 24 * 60 * 60 * 1000),
+            reason: pick(['Base Salary', 'Bonus', 'Advance', 'Reimbursement']),
+            receiptId: receiptId(),
+          });
+          remainingToDistribute -= amt;
+        }
+      }
+
       const attendance = pick(['Present', 'Absent', 'Unmarked']);
 
       await Teacher.create({
@@ -231,6 +261,7 @@ async function seed() {
         totalSalary,
         tillGivenFees,
         overpayments,
+        payments,
         attendanceStatus: attendance,
         lastAttendanceReset: new Date(),
       });
@@ -239,7 +270,8 @@ async function seed() {
 
   await createTeachers(schoolTeachers, 'School');
   await createTeachers(collegeTeachers, 'College');
-  console.log(`   ✅ ${schoolTeachers.length + collegeTeachers.length} teachers created\n`);
+  await createTeachers(pharmaTeachers, 'Pharma');
+  console.log(`   ✅ ${schoolTeachers.length + collegeTeachers.length + pharmaTeachers.length} teachers created\n`);
 
   // ── Expenses ────────────────────────────────────────────────────────
   console.log('💸 Seeding Expenses...');

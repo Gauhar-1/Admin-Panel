@@ -15,7 +15,7 @@ export default function CollegePage() {
           College Management
         </h1>
         <p className="text-muted text-sm mt-1">
-          Manage students, teachers, fees, and attendance for the College branch
+          Manage students, teachers, and fees for the College branch
         </p>
       </div>
 
@@ -45,7 +45,7 @@ export default function CollegePage() {
 
       {/* Content */}
       {activeTab === 'students' ? (
-        <StudentTable branch="College" showAttendance={true} />
+        <StudentTable branch="College" />
       ) : (
         <TeacherTable branch="College" />
       )}

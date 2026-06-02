@@ -1,12 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import ExpenseForm from '@/components/expenses/ExpenseForm';
 import ExpenseTable from '@/components/expenses/ExpenseTable';
 
 export default function ExpensesPage() {
-  const [refreshKey, setRefreshKey] = useState(0);
-
   return (
     <div className="animate-fade-in">
       {/* Header */}
@@ -21,11 +18,11 @@ export default function ExpensesPage() {
 
       {/* Add Expense Form */}
       <div className="mb-6">
-        <ExpenseForm onSaved={() => setRefreshKey((k) => k + 1)} />
+        <ExpenseForm />
       </div>
 
       {/* Expense Ledger */}
-      <ExpenseTable refreshKey={refreshKey} />
+      <ExpenseTable />
     </div>
   );
 }
