@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 require('dotenv').config({ path: '.env.local' });
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -57,6 +58,17 @@ const ExpenseSchema = new mongoose.Schema(
 const Student = mongoose.models.Student || mongoose.model('Student', StudentSchema);
 const Teacher = mongoose.models.Teacher || mongoose.model('Teacher', TeacherSchema);
 const Expense = mongoose.models.Expense || mongoose.model('Expense', ExpenseSchema);
+
+// Admin Schema
+const AdminSchema = new mongoose.Schema(
+  {
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    passwordHash: { type: String, required: true },
+    name: { type: String, required: true, trim: true },
+  },
+  { timestamps: true }
+);
+const Admin = mongoose.models.Admin || mongoose.model('Admin', AdminSchema);
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -164,7 +176,19 @@ async function seed() {
   await Student.deleteMany({});
   await Teacher.deleteMany({});
   await Expense.deleteMany({});
+  await Admin.deleteMany({});
   console.log('   Done.\n');
+
+  // ── Admin User ──────────────────────────────────────────────────────
+  console.log('🔐 Seeding Admin User...');
+  const adminPassword = 'Admin@123456';
+  const passwordHash = await bcrypt.hash(adminPassword, 12);
+  await Admin.create({
+    email: 'admin@institution.local',
+    passwordHash,
+    name: 'Administrator',
+  });
+  console.log('   ✅ Admin user created\n');
 
   // ── Students ────────────────────────────────────────────────────────
   console.log('👨‍🎓 Seeding Students...');
@@ -298,6 +322,9 @@ async function seed() {
   console.log('═══════════════════════════════════════');
   console.log('  📊 SEED SUMMARY');
   console.log('═══════════════════════════════════════');
+  console.log(`  Admin:        admin@institution.local`);
+  console.log(`  Password:     Admin@123456`);
+  console.log('───────────────────────────────────────');
   console.log(`  Students:     ${studentCount}`);
   console.log(`  Teachers:     ${teacherCount}`);
   console.log(`  Expenses:     ${expenseCount}`);
